@@ -1,3 +1,6 @@
-Flask>=2.2,<3.0
-python-dotenv>=0.21.0
+Flask
+python-dotenv
 sentence-transformers
+vllm
+torch
+torchvision

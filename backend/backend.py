@@ -1,12 +1,11 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import glob
-import requests
+from ocr import run_ocr
 
 app = Flask(__name__)
 
 current_directory = {'path': None}
-OCR_ENDPOINT = 'http://127.0.0.1:8000'  # Assuming vLLM serve is running here
 
 @app.route('/')
 def index():
@@ -30,12 +29,7 @@ def set_path():
 
         for img_path in image_files:
             try:
-                with open(img_path, 'rb') as f:
-                    files = {'file': f}
-                    response = requests.post(f'{OCR_ENDPOINT}/predict', files=files)
-                    response.raise_for_status()
-                    ocr_text = response.json().get('prediction', '')
-
+                ocr_text = run_ocr(img_path)
                 base_name = os.path.splitext(os.path.basename(img_path))[0]
                 with open(os.path.join(cache_dir, f'{base_name}.txt'), 'w', encoding='utf-8') as out_f:
                     out_f.write(ocr_text)
