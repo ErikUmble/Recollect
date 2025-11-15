@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import glob
@@ -6,6 +6,16 @@ from ocr import run_ocr  # Your OCR function
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"])  # Allow React frontend
+
+@app.route('/api/file', methods=['GET'])
+def get_file():
+    path = request.args.get('path')
+    if not path or not os.path.isfile(path):
+        return {'error': 'File not found'}, 404
+    try:
+        return send_file(path, as_attachment=False)
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 @app.route('/api/list-dirs', methods=['GET'])
 def list_dirs():
@@ -51,35 +61,39 @@ def set_path():
 
 @app.route('/api/search', methods=['POST'])
 def search():
-    data = request.get_json()
-    query = data.get('q', '').lower()
-    path = data.get('path')
-    if not query:
-        return jsonify({'results': []})
-    if not path or not os.path.isdir(path):
-        return jsonify({'error': 'Invalid directory path'}), 400
+    """
+    Returns JSON with each result containing:
+    - 'image': index of the main image in the all_files list
+    - 'all_files': list of full file paths in the directory
+    """
+    # Example main image
+    main_image = 'tests/data/The_Rensselaer_Polytechnic:_April_1,_1918/page1.jpg'
+    directory = os.path.dirname(main_image)
 
-    results = []
-    search_dir = os.path.join(path, 'recollect')
-    if not os.path.exists(search_dir):
-        return jsonify({'results': []})
+    try:
+        # Full paths for all files in directory
+        all_files = [
+            os.path.abspath(os.path.join(directory, f))
+            for f in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, f))
+        ]
+        all_files.sort()
 
-    for root, dirs, files in os.walk(search_dir):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read().lower()
-                    if query in content:
-                        idx = content.find(query)
-                        start = max(idx - 50, 0)
-                        end = min(idx + 150, len(content))
-                        excerpt = f"...{content[start:end]}..."
-                        results.append({'path': file_path, 'excerpt': excerpt})
-            except Exception:
-                continue
+        # Determine index of main image
+        try:
+            main_index = all_files.index(os.path.abspath(main_image))
+        except ValueError:
+            main_index = 0
+    except Exception:
+        all_files = []
+        main_index = 0
 
-    return jsonify({'results': results})
+    result = {
+        'image': main_index,
+        'all_files': all_files
+    }
+
+    return jsonify({'results': [result]})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

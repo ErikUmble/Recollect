@@ -1,37 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
+import DirectoryBrowser from './components/DirectoryBrowser';
+import SearchResult from './components/SearchResult';
 
-type Dir = { name: string; full: string };
 type Result = { path: string; excerpt: string };
 
 const API_BASE = 'http://127.0.0.1:5000';
 
 const App: React.FC = () => {
+  const [directoryPath, setDirectoryPath] = useState('');
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [logs, setLogs] = useState<{ text: string; type: 'info' | 'success' | 'error' }[]>([]);
   const [status, setStatus] = useState('Idle');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [directoryPath, setDirectoryPath] = useState('');
-  const [browserOpen, setBrowserOpen] = useState(false);
-  const [currentBrowserPath, setCurrentBrowserPath] = useState('.');
-  const [dirs, setDirs] = useState<Dir[]>([]);
 
+  // log helper
   const log = (text: string, type: 'info' | 'success' | 'error' = 'info') => {
     const timestamp = `[${new Date().toLocaleTimeString()}] ${text}`;
     setLogs((prev) => [{ text: timestamp, type }, ...prev]);
   };
 
-  const fetchDirs = async (path: string) => {
-    try {
-      const resp = await fetch(`${API_BASE}/api/list-dirs?path=${encodeURIComponent(path)}`);
-      const data = await resp.json();
-      setDirs(data.dirs || []);
-      setCurrentBrowserPath(path);
-    } catch (e: any) {
-      log(e.message, 'error');
-    }
-  };
-
+  // set directory on backend
   const setDirectory = async (path: string) => {
     if (!path) return;
     setStatus('Setting path...');
@@ -52,6 +42,7 @@ const App: React.FC = () => {
     }
   };
 
+  // search backend
   const search = async (q: string) => {
     if (!q) {
       log('Please enter search terms', 'error');
@@ -81,20 +72,6 @@ const App: React.FC = () => {
 
   const escapeHtml = (s: string) =>
     String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const goUp = () => {
-    const parts = currentBrowserPath.split(/[/\\]/);
-    if (parts.length > 1) {
-      const parent = parts.slice(0, -1).join('/');
-      fetchDirs(parent || '.');
-    }
-  };
-
-  useEffect(() => {
-    if (browserOpen) {
-      fetchDirs(currentBrowserPath);
-    }
-  }, [browserOpen]);
 
   return (
     <div className="frame">
@@ -126,7 +103,6 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-
       <main className="main">
         <div className="searchbar">
           <input
@@ -143,13 +119,8 @@ const App: React.FC = () => {
         </div>
 
         <div className="results" role="region" aria-live="polite">
-          {results.length ? (
-            results.map((it, idx) => (
-              <div key={idx} className="result">
-                <div className="filename">{escapeHtml(it.path || 'unknown')}</div>
-                <div className="excerpt">{escapeHtml(it.excerpt || '').slice(0, 500)}</div>
-              </div>
-            ))
+        {results.length ? (
+          results.map((r, idx) => <SearchResult key={idx} result={r} />)
           ) : (
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>No results yet.</div>
           )}
@@ -177,34 +148,14 @@ const App: React.FC = () => {
       </footer>
 
       {/* Directory Browser Modal */}
-      {browserOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <div className="modal-header">
-              <span>Choose Directory</span>
-              <button className="btn" onClick={() => setBrowserOpen(false)}>
-                X
-              </button>
-            </div>
-            <div className="modal-body">
-              <button className="btn" onClick={goUp}>
-                .. (Up)
-              </button>
-              {dirs.length === 0 && <div style={{ color: 'var(--muted)' }}>No subdirectories</div>}
-              {dirs.map((d) => (
-                <div key={d.full} className="dir-item">
-                  <button className="btn" onClick={() => fetchDirs(d.full)}>
-                    {d.name}
-                  </button>
-                  <button className="btn primary" onClick={() => setDirectory(d.full)}>
-                    Select
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <DirectoryBrowser
+        open={browserOpen}
+        currentPath={directoryPath || '.'}
+        onClose={() => setBrowserOpen(false)}
+        onSelect={(path) => setDirectory(path)}
+        apiBase={API_BASE}
+        log={log}
+      />
     </div>
   );
 };

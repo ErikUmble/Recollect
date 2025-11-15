@@ -200,62 +200,93 @@ footer {
   color: #39ff14;
 }
 
-/* Modal overlay */
+/* Modal backdrop */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.7);
+  background: rgba(11, 14, 19, 0.85); /* semi-transparent dark */
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
 }
 
 /* Modal box */
 .modal-content {
   background: var(--panel);
-  border: 2px solid var(--accent);
+  border: 3px solid #071722;
   border-radius: 12px;
-  width: 400px;
-  max-height: 60vh;
+  box-shadow: 0 12px 40px var(--shadow);
+  padding: 12px 18px;
+  max-width: 90vw;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 12px;
+  color: var(--muted);
 }
 
-/* Header */
+/* Modal header */
 .modal-header {
   display: flex;
   justify-content: space-between;
-  padding: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-family: 'PressStart2P', monospace;
-  color: var(--accent);
-  font-size: 12px;
-}
-
-/* Body */
-.modal-body {
-  padding: 12px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Directory item */
-.dir-item {
-  display: flex;
-  gap: 4px; /* slightly smaller gap */
   align-items: center;
+  font-family: 'Inconsolata', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+/* Modal body for content or image */
+.modal-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  overflow: auto;
+  max-height: 60vh;
 }
 
 /* Buttons inside modal */
-.modal-body .btn {
-  padding: 6px 8px; /* smaller padding */
-  font-size: 11px; /* smaller font */
+.modal .btn {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+/* Directory items inside modal */
+.dir-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Image in modal */
+.modal img {
+  border: 2px solid rgba(57, 255, 20, 0.3);
+  border-radius: 6px;
+  max-height: 60vh;
+  max-width: 80%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Disable buttons when at start/end */
+.modal .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Optional: small scrollbar styling */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(57, 255, 20, 0.3);
+  border-radius: 4px;
 }
 
