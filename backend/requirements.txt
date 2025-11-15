@@ -1,4 +1,4 @@
 Flask
 python-dotenv
 sentence-transformers
-transformers
+flask-cors
