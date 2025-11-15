@@ -1,0 +1,292 @@
+/* Local font faces */
+@font-face {
+  font-family: 'PressStart2P';
+  src: local('Press Start 2P'), url('PressStart2P-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Inconsolata';
+  src: local('Inconsolata'), url('Inconsolata-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --bg: #0b0e13;
+  --panel: #0f1720;
+  --accent: #39ff14;
+  --muted: #8da3b9;
+  --shadow: rgba(0, 0, 0, 0.6);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Inconsolata, monospace;
+  background: linear-gradient(180deg, #061018, var(--bg));
+  color: var(--muted);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 24px;
+}
+
+.frame {
+  width: 1080px;
+  max-width: 96vw;
+  height: 78vh;
+  background: var(--panel);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px var(--shadow);
+  border: 4px solid #071722;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  grid-template-rows: 64px 1fr;
+}
+
+header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.logo {
+  font-family: 'PressStart2P', monospace;
+  color: var(--accent);
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+header .subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.sidebar {
+  padding: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+select,
+input[type='text'],
+.search-input {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.03);
+  padding: 10px;
+  color: var(--muted);
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.btn.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.main {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.searchbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.results {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.result {
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.filename {
+  font-family: 'PressStart2P', monospace;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.excerpt {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.console {
+  height: 110px;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.01));
+  overflow: auto;
+}
+
+.log {
+  font-family: Inconsolata;
+  color: var(--muted);
+}
+
+.log.success {
+  color: var(--accent);
+}
+
+.log.error {
+  color: #ff6b6b;
+}
+
+footer {
+  grid-column: 1 / -1;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Retro style for file chooser button */
+.btn.primary {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+  font-family: 'PressStart2P', monospace;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(0, 255, 20, 0.4); /* neon glow effect */
+  color: #39ff14;
+}
+
+/* Modal backdrop */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(11, 14, 19, 0.85); /* semi-transparent dark */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal box */
+.modal-content {
+  background: var(--panel);
+  border: 3px solid #071722;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px var(--shadow);
+  padding: 12px 18px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--muted);
+}
+
+/* Modal header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Inconsolata', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+/* Modal body for content or image */
+.modal-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  overflow: auto;
+  max-height: 60vh;
+}
+
+/* Buttons inside modal */
+.modal .btn {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+/* Directory items inside modal */
+.dir-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Image in modal */
+.modal img {
+  border: 2px solid rgba(57, 255, 20, 0.3);
+  border-radius: 6px;
+  max-height: 60vh;
+  max-width: 80%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Disable buttons when at start/end */
+.modal .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Optional: small scrollbar styling */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(57, 255, 20, 0.3);
+  border-radius: 4px;
+}
+
