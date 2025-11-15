@@ -27,7 +27,7 @@
     header .subtitle{font-size:11px;color:var(--muted);margin-left:6px}
     .sidebar{padding:18px;border-right:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:12px}
     label{font-size:11px;color:var(--muted);}
-    input[type="text"]{background:transparent;border:1px dashed rgba(255,255,255,0.03);padding:10px;color:var(--muted);border-radius:6px;width:100%;box-sizing:border-box}
+    select, input[type="text"]{background:transparent;border:1px dashed rgba(255,255,255,0.03);padding:10px;color:var(--muted);border-radius:6px;width:100%;box-sizing:border-box}
     .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer;font-family:inherit}
     .btn:hover{box-shadow:0 6px 16px rgba(0,0,0,0.45);}
     .btn.primary{border-color:var(--accent);color:var(--accent);}
@@ -55,8 +55,8 @@
 
     <aside class="sidebar">
       <div>
-        <label class="small">Directory Path</label>
-        <input id="dirPath" type="text" placeholder="/home/user/my-data" />
+        <label class="small">Select Directory</label>
+        <select id="dirSelect"></select>
       </div>
       <div>
         <button class="btn primary" id="setPathBtn">Set Directory</button>
@@ -81,12 +81,12 @@
   </div>
 
   <script>
+    const dirSelect = document.getElementById('dirSelect');
     const setPathBtn = document.getElementById('setPathBtn');
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('searchInput');
     const results = document.getElementById('results');
     const consoleEl = document.getElementById('console');
-    const dirPath = document.getElementById('dirPath');
     const statusEl = document.getElementById('status');
 
     const setPathEndpoint = '/api/set-path';
@@ -99,6 +99,18 @@
     }
 
     function setStatus(text){ statusEl.textContent = text; }
+
+    async function fetchSubdirs(path='.'){
+      try{
+        const resp = await fetch(`/api/list-dirs?path=${encodeURIComponent(path)}`);
+        const data = await resp.json();
+        dirSelect.innerHTML = '';
+        data.dirs.forEach(d=>{
+          const opt = document.createElement('option'); opt.value=d.full; opt.textContent=d.name;
+          dirSelect.appendChild(opt);
+        });
+      }catch(e){ log(e.message,'error'); }
+    }
 
     async function setDirectory(path){
       setStatus('Setting path...');
@@ -144,11 +156,12 @@
 
     function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    setPathBtn.addEventListener('click', ()=>{ setDirectory(dirPath.value.trim()); });
+    setPathBtn.addEventListener('click', ()=>{ setDirectory(dirSelect.value); });
     searchBtn.addEventListener('click', ()=>{ search(searchInput.value.trim()); });
     searchInput.addEventListener('keydown', e=>{ if(e.key==='Enter') searchBtn.click(); });
 
-    log('Welcome to Recollect. Set directory path and start searching.');
+    fetchSubdirs();
+    log('Welcome to Recollect. Select a directory and start searching.');
   </script>
 </body>
 </html>
