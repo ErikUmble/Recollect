@@ -75,8 +75,7 @@ def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png
     
     return documents
 
-if __name__ == "__main__":
-    # run tests
+def run_tests():
     test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tests", "data")
     filepaths = extract_file_paths(test_data_dir, ('txt',))
     filenames = [os.path.basename(fp) for fp in filepaths]
@@ -95,3 +94,7 @@ if __name__ == "__main__":
     assert len(results) == 2
     assert results[0].path.endswith("dog.txt") or results[0].path.endswith("horse.txt")
     assert results[1].path.endswith("dog.txt") or results[1].path.endswith("horse.txt")
+
+if __name__ == "__main__":
+    run_tests()
+    

@@ -1,35 +1,18 @@
 # ocr_service.py
 from typing import List
-from transformers import pipeline
 from PIL import Image
-import torch
 
-# Determine device
-device = 0 if torch.backends.mps.is_available() else -1  # 0 = MPS, -1 = CPU
-
-# Initialize the OCR pipeline forcing float32 to avoid bf16 issues
-ocr_pipeline = pipeline(
-    "image-to-text",
-    model="nanonets/Nanonets-OCR2-3B",
-    device=device,             # MPS device
-    torch_dtype=torch.float32  # Force FP32 (bf16 not supported on MPS)
-)
+import pytesseract
+from PIL import Image
 
 def run_ocr(image_path: str) -> str:
     """
-    Run OCR on a given image file path and return the extracted text.
+    Run OCR on a document image using Tesseract.
     """
     try:
-        # Open image to ensure compatibility
         image = Image.open(image_path).convert("RGB")
-        result = ocr_pipeline(image)
-
-        # Transformers pipeline returns a list of dicts with 'generated_text'
-        if result and isinstance(result, list):
-            text = '\n'.join([r.get('generated_text', '') for r in result])
-        else:
-            text = ''
-        return text
+        text = pytesseract.image_to_string(image)
+        return text.strip()
     except Exception as e:
         print(f"OCR failed for {image_path}: {e}")
         return ''
@@ -49,3 +32,16 @@ def extract_sentences(path: str) -> List[str]:
     # naive sentence splitting by periods
     sentences = [sentence.strip() for sentence in text.split('.') if sentence.strip()]
     return sentences
+
+def run_tests():
+    import os
+    from search import extract_file_paths
+    test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tests", "data")
+    filepaths = extract_file_paths(test_data_dir, ('jpg',))
+
+    print(filepaths[:3])
+    texts = [run_ocr(fp) for fp in filepaths[:3]]
+    print(texts)
+
+if __name__ == "__main__":
+    run_tests()
