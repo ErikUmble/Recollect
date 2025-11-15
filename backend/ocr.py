@@ -38,4 +38,14 @@ def extract_sentences(path: str) -> List[str]:
     """
     Get the list of sentences from the document file at path
     """
-    raise NotImplementedError()
+    if path.endswith('.txt'):
+        with open(path) as f:
+            text = f.read()
+    elif path.endswith('.png') or path.endswith('.jpg'):
+        text = run_ocr(path)
+    else:
+        raise NotImplementedError(f"OCR not implemented for file type: {path}")
+    
+    # naive sentence splitting by periods
+    sentences = [sentence.strip() for sentence in text.split('.') if sentence.strip()]
+    return sentences

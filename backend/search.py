@@ -4,7 +4,8 @@ import numpy as np
 from typing import List, Optional, Tuple
 
 
-from .ocr import extract_sentences
+from ocr import extract_sentences
+
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -73,3 +74,24 @@ def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png
         documents.append(document)
     
     return documents
+
+if __name__ == "__main__":
+    # run tests
+    test_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tests", "data")
+    filepaths = extract_file_paths(test_data_dir, ('txt',))
+    filenames = [os.path.basename(fp) for fp in filepaths]
+    for filename in ["construction_project.txt", "dog.txt", "horse.txt", "programmer.txt"]:
+        assert filename in filenames, f"{filename} not found in extracted file paths"
+
+    documents = create_index(test_data_dir, allow_types=('txt',))
+
+    query = "A person who writes code"
+    results = search_documents(query, documents, top_k=1)
+    assert len(results) == 1
+    assert results[0].path.endswith("programmer.txt")
+
+    query = "animal"
+    results = search_documents(query, documents, top_k=2)
+    assert len(results) == 2
+    assert results[0].path.endswith("dog.txt") or results[0].path.endswith("horse.txt")
+    assert results[1].path.endswith("dog.txt") or results[1].path.endswith("horse.txt")
