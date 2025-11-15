@@ -1,6 +1,4 @@
 Flask
 python-dotenv
 sentence-transformers
-vllm
-torch
-torchvision
+transformers

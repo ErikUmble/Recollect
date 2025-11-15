@@ -11,6 +11,10 @@ current_directory = {'path': None}
 def index():
     return send_from_directory('../frontend', 'frontend.html')
 
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('../frontend', filename)
+
 @app.route('/api/set-path', methods=['POST'])
 def set_path():
     data = request.get_json()
