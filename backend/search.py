@@ -1,10 +1,11 @@
+from anyio import Path
 from sentence_transformers import SentenceTransformer, util
 import os
 import numpy as np
 from typing import List, Optional, Tuple
 
 
-from ocr import extract_sentences
+from ocr import extract_chunks
 
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -20,6 +21,24 @@ class Document:
         # compute embedding
         self.embeddings = compute_document_embeddings(path)
 
+    def __str__(self):
+        return self.path
+    
+    def __repr__(self):
+        return self.__str__()
+
+    def serialize(self) -> dict:
+        return {
+            'path': self.path,
+            'embeddings': np.array(self.embeddings)
+        }
+    
+    @staticmethod
+    def deserialize(data: dict) -> 'Document':
+        path = data['path']
+        embeddings = [np.array(emb) for emb in data['embeddings']]
+        return Document(path, embeddings=embeddings)
+
 def compute_text_embedding(text: str) -> np.ndarray:
     embedding = model.encode(text, convert_to_tensor=True)
     return embedding
@@ -28,8 +47,8 @@ def compute_document_embeddings(path: str) -> List[np.ndarray]:
     """
     returns a list of embeddings for the sentences in the document
     """
-    sentences = extract_sentences(path)
-    embeddings = [model.encode(sentence, convert_to_tensor=True) for sentence in sentences]
+    chunks = extract_chunks(path)
+    embeddings = [model.encode(chunk, convert_to_tensor=True) for chunk in chunks]
     return embeddings
 
 def compute_similarity(embedding1: np.ndarray, embedding2: np.ndarray) -> float:
@@ -40,6 +59,8 @@ def search_documents(query: str, documents: List[Document], top_k: int=5) -> Lis
     similarities = []
 
     for idx, doc in enumerate(documents):
+        if len(doc.embeddings) == 0:
+            continue
         # Save maximum similarity across all embeddings in the document
         doc_similarities = [compute_similarity(query_embedding, emb) for emb in doc.embeddings]
         similarities.append((max(doc_similarities), idx))
@@ -54,6 +75,10 @@ def search_documents(query: str, documents: List[Document], top_k: int=5) -> Lis
 def extract_file_paths(dir_path: str, types: Tuple[str]) -> List[str]:
     file_paths = []
     for filename in os.listdir(dir_path):
+
+        if filename == '.recollect':
+            continue
+
         if '.' in filename and filename.split('.')[-1].lower() in types and not os.path.isdir(os.path.join(dir_path, filename)):
             file_paths.append(os.path.join(dir_path, filename))
 
@@ -63,15 +88,59 @@ def extract_file_paths(dir_path: str, types: Tuple[str]) -> List[str]:
     
     return file_paths
 
-def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt')) -> List[Document]:
+def save_index(index_path: str, documents: List[Document]):
+    
+    os.makedirs(index_path, exist_ok=True)
+
+    index_data = {"documents": []}
+    for i, doc in enumerate(documents):
+        emb_path = f"doc_{i}_embeddings.npz"
+        np.savez(os.path.join(index_path, emb_path), *doc.embeddings)
+        index_data["documents"].append({
+            "path": doc.path,
+            "embeddings_file": emb_path
+        })
+
+    with open(os.path.join(index_path, "index.json"), "w") as f:
+        import json
+        json.dump(index_data, f)
+
+def load_index(index_path: str) -> List[Document]:
+    import json
+    with open(Path(index_path) / "index.json", "r") as f:
+        index_data = json.load(f)
+    
+    documents = []
+    for doc_data in index_data["documents"]:
+        emb_file = Path(index_path) / doc_data["embeddings_file"]
+        loaded = np.load(emb_file)
+        embeddings = [loaded[key] for key in loaded]
+        document = Document(doc_data["path"], embeddings=embeddings)
+        documents.append(document)
+    
+    return documents
+
+def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt'), use_cache=True) -> List[Document]:
     """
     Create an index of documents from the specified directory.
     """
+
+    # check if cached index exists
+    if use_cache and os.path.exists(os.path.join(dir_path, '.recollect')):
+        documents = load_index(os.path.join(dir_path, '.recollect'))
+
+        # only return if we actually loaded an index
+        if len(documents) > 0:
+            return documents
 
     documents = []
     for filepath in extract_file_paths(dir_path, allow_types):
         document = Document(filepath)
         documents.append(document)
+
+    # save cached index
+    if use_cache:
+        save_index(os.path.join(dir_path, '.recollect'), documents)
     
     return documents
 

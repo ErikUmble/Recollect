@@ -1,4 +1,6 @@
 Flask
 python-dotenv
 sentence-transformers
-transformers
+pytesseract
+
+# apt-get install tesseract-ocr
