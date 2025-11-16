@@ -4,7 +4,7 @@ from search import create_index, search_documents
 from ocr import run_ocr
 
 def fetch_newspaper_text(agent_query):
-    documents = create_index('tests/data/The_Rensselaer_Polytechnic:_April_1,_1947')
+    documents = create_index('tests/data')
     results = search_documents(agent_query, documents, top_k=1)
     total_str = ""
     for result in results:

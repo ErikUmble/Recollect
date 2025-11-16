@@ -136,7 +136,7 @@ def send_agent_prompt():
     except Exception as e:
         agent_summary = {"error": str(e)}
         print(f"Agent error: {e}")
-        
+
     return jsonify({'ok': True, 'response': agent_summary})
 
 if __name__ == '__main__':
@@ -145,6 +145,6 @@ if __name__ == '__main__':
 
     # Create index before starting server
     create_index('tests/data/', use_cache=True)
-    
+
     # Start Flask app
     app.run(debug=True, port=5000)
