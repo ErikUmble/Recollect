@@ -48,9 +48,9 @@ const App: React.FC = () => {
           prompt(query), // new async prompt
         ]);
 
-        console.log('Prompt result:', promptAnswer);
+        setResults(searchResults);
         setAISummary(promptAnswer);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
         log(err.message, 'error');
         appendStatus('Error');
@@ -100,12 +100,13 @@ const App: React.FC = () => {
       });
       if (!resp.ok) throw new Error('Search failed');
       const data = await resp.json();
-      setResults(data.results || []);
       log(`Search returned ${(data.results || []).length} results`, 'success');
       removeStatus('Searching');
+      return data.results || [];
     } catch (e: any) {
       log(e.message, 'error');
       appendStatus('Error');
+      return [];
     }
   };
 
