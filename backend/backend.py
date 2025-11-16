@@ -119,16 +119,13 @@ def search():
 def send_agent_prompt():
     global agent_response
     data = request.get_json()
-    print(f"Data Recieved: {data}")
     prompt = data.get('prompt')
     if not prompt:
         return jsonify({'error': 'No prompt provided'}), 400
 
     try:
         user_question = HumanMessage(content=prompt)
-        print(f"Sending prompt to agent: {prompt}")  # debug
         agent_response = agent.invoke({"messages": [user_question]})
-        print(f"Agent response: {agent_response}")  # debug
 
         # Extract non-empty AIMessage content (summary)
         ai_contents = [
@@ -138,7 +135,6 @@ def send_agent_prompt():
         agent_summary = ai_contents[0] if ai_contents else ""
     except Exception as e:
         agent_summary = {"error": str(e)}
-        print(f"Agent error: {e}")
 
     return jsonify({'ok': True, 'response': agent_summary})
 
