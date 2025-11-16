@@ -1,8 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
-import glob
-from ocr import run_ocr
 from search import search_documents, create_index
 from agent import build_agent
 from langchain_core.messages import HumanMessage
