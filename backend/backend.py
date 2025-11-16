@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 from search import search_documents, get_cached_index_only
 from agent import build_agent
+from local_toolkit import set_agent_documents
 from langchain_core.messages import HumanMessage
 import threading
 
@@ -53,7 +54,9 @@ def list_dirs():
 
 def build_index(path):
     global documents
-    documents = get_cached_index_only(path)
+    results = get_cached_index_only(path)
+    documents = results
+    set_agent_documents(results)
 
 @app.route('/api/set-path', methods=['POST'])
 def set_path():

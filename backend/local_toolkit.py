@@ -1,11 +1,17 @@
 from langchain.tools import BaseTool
 from typing import List
-from search import get_index, search_documents, get_cached_index_only
+from search import search_documents
 from ocr import run_ocr
 
+agent_documents = []
+
+def set_agent_documents(docs: List):
+    global agent_documents
+    agent_documents = docs
+
 def fetch_newspaper_text(agent_query):
-    documents = get_cached_index_only('demo/data')
-    results = search_documents(agent_query, documents, top_k=1)
+    print('Agent is searching documents:', agent_documents)
+    results = search_documents(agent_query, agent_documents, top_k=1)
     total_str = ""
     for result in results:
         result_str = run_ocr(result.path)
