@@ -2,12 +2,24 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import glob
-from ocr import run_ocr  # Your OCR function
+from ocr import run_ocr
 from search import search_documents, create_index
+from agent import build_agent
+from langchain_core.messages import HumanMessage
 
+# Global variable to hold the agent's last response
+agent_response = None
+agent = None
+
+# ==============================
+# Flask app setup
+# ==============================
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"])  # Allow React frontend
 
+# ------------------------------
+# File endpoints
+# ------------------------------
 @app.route('/api/file', methods=['GET'])
 def get_file():
     path = request.args.get('path')
@@ -60,6 +72,9 @@ def set_path():
 
     return jsonify({'ok': True, 'path': path})
 
+# ------------------------------
+# Search endpoint
+# ------------------------------
 @app.route('/api/search', methods=['POST'])
 def search():
     """
@@ -86,6 +101,42 @@ def search():
         })
     return jsonify({'results': results})
 
+# ------------------------------
+# Agent endpoints
+# ------------------------------
+@app.route('/api/agent/send', methods=['POST'])
+def send_agent_prompt():
+    global agent_response
+    data = request.get_json()
+    print(f"Data Recieved: {data}")
+    prompt = data.get('prompt')
+    if not prompt:
+        return jsonify({'error': 'No prompt provided'}), 400
+
+    try:
+        user_question = HumanMessage(content=prompt)
+        print(f"Sending prompt to agent: {prompt}")  # debug
+        agent_response = agent.invoke({"messages": [user_question]})
+        print(f"Agent response: {agent_response}")  # debug
+
+        # Extract non-empty AIMessage content (summary)
+        ai_contents = [
+            msg.content for msg in agent_response["messages"]
+            if msg.__class__.__name__ == "AIMessage" and msg.content.strip() != ""
+        ]
+        agent_summary = ai_contents[0] if ai_contents else ""
+    except Exception as e:
+        agent_summary = {"error": str(e)}
+        print(f"Agent error: {e}")
+        
+    return jsonify({'ok': True, 'response': agent_summary})
+
 if __name__ == '__main__':
+    # Initialize agent in main
+    agent = build_agent()
+
+    # Create index before starting server
     create_index('tests/data/', use_cache=True)
+    
+    # Start Flask app
     app.run(debug=True, port=5000)
