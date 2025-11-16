@@ -3,8 +3,8 @@ import '../App.css';
 
 export type Result = {
   dir: string;
-  match_index: number;
-  all_files: string[]
+  matching_indices: number[];
+  all_files: string[];
 };
 
 type SearchResultProps = {
@@ -13,56 +13,82 @@ type SearchResultProps = {
 
 export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(result.match_index);
-  console.log(result);
+  const [selectedIndex, setSelectedIndex] = useState(result.matching_indices[0] || 0);
 
-  const openModal = () => {
-    setCurrentIndex(result.match_index);
+  const openModalAt = (i: number) => {
+    setSelectedIndex(i);
     setModalOpen(true);
   };
 
   const closeModal = () => setModalOpen(false);
 
   const goLeft = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
   const goRight = () => {
-    setCurrentIndex((prev) => (prev < result.all_files.length - 1 ? prev + 1 : prev));
+    setSelectedIndex((prev) => (prev < result.all_files.length - 1 ? prev + 1 : prev));
   };
+
+  const currentFile = result.all_files[selectedIndex];
 
   return (
     <>
-      {/* Search Result Item */}
-      <div className="result" onClick={openModal} style={{ cursor: 'pointer' }}>
-        { result.all_files[result.match_index].split('/').pop() }
+      <div className="result-block">
+        {/* Directory name */}
+        <div className="result-title">
+          {result.dir.split('/').pop()}
+        </div>
+
+        {/* Thumbnails */}
+        <div className="thumb-grid">
+          {result.matching_indices.map((idx) => (
+            <img
+              key={idx}
+              className="thumb"
+              src={`http://127.0.0.1:5000/api/file?path=${encodeURIComponent(result.all_files[idx])}`}
+              onClick={() => openModalAt(idx)}
+              alt={result.all_files[idx]}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Modal for Image Viewer */}
+      {/* Modal */}
       {modalOpen && (
         <div className="modal">
           <div className="modal-content">
+
             <div className="modal-header">
-              <span>{result.all_files[currentIndex]}</span>
-              <button className="btn" onClick={closeModal}>
-                X
-              </button>
+              <span>{currentFile}</span>
+              <button className="btn" onClick={closeModal}>X</button>
             </div>
+
             <div className="modal-body">
-              <button className="btn" onClick={goLeft} disabled={currentIndex === 0}>
+              <button className="btn" onClick={goLeft} disabled={selectedIndex === 0}>
                 ⬅
               </button>
+
               <img
-                src={`http://127.0.0.1:5000/api/file?path=${encodeURIComponent(
-                  result.all_files[currentIndex]
-                )}`}
-                alt={result.all_files[currentIndex]}
-                style={{ maxWidth: '80%', maxHeight: '60vh', margin: '0 12px', borderRadius: '6px' }}
+                src={`http://127.0.0.1:5000/api/file?path=${encodeURIComponent(currentFile)}`}
+                alt={currentFile}
+                style={{
+                  maxWidth: '80%',
+                  maxHeight: '60vh',
+                  margin: '0 12px',
+                  borderRadius: '6px'
+                }}
               />
-              <button className="btn" onClick={goRight} disabled={currentIndex === result.all_files.length - 1}>
+
+              <button
+                className="btn"
+                onClick={goRight}
+                disabled={selectedIndex === result.all_files.length - 1}
+              >
                 ➡
               </button>
             </div>
+
             <div
               style={{
                 marginTop: 6,
@@ -71,7 +97,7 @@ export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
                 fontFamily: "'Inconsolata', monospace",
               }}
             >
-              {currentIndex + 1} / {result.all_files.length}
+              {selectedIndex + 1} / {result.all_files.length}
             </div>
           </div>
         </div>
