@@ -83,7 +83,6 @@ def search():
     data = request.get_json()
     query = data.get('query')
     path = data.get('path')
-    documents = get_cached_index_only(path)
 
     if not query or not documents:
         return jsonify({'results': []})
