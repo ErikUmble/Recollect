@@ -7,6 +7,7 @@ from search import search_documents, create_index
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"])  # Allow React frontend
+documents = []
 
 @app.route('/api/file', methods=['GET'])
 def get_file():
@@ -73,12 +74,15 @@ def search():
     if not query:
         return jsonify({'results': []})
 
-    matching_paths = search_documents(query)
+    matching_paths = search_documents(query, documents)
     results = []
-    for path in matching_paths:
+    for document in matching_paths:
+        path = document.path
+        # convert path to absolute
+        path = os.path.abspath(path)
         dir_name = os.path.dirname(path)
-        all_files = [os.path.basename(f) for f in glob.glob(os.path.join(dir_name, '*'))]
-        match_index = all_files.index(os.path.basename(path)) if os.path.basename(path) in all_files else -1
+        all_files = [os.path.abspath(doc.path) for doc in documents if os.path.dirname(os.path.abspath(doc.path)) == dir_name]
+        match_index = all_files.index(path) if path in all_files else -1
         results.append({
             'dir': dir_name,
             'match_index': match_index,
@@ -87,5 +91,5 @@ def search():
     return jsonify({'results': results})
 
 if __name__ == '__main__':
-    create_index('tests/data/', use_cache=True)
+    documents = create_index('tests/data/', use_cache=True)
     app.run(debug=True, port=5000)

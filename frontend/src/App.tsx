@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import DirectoryBrowser from './components/DirectoryBrowser';
-import SearchResult from './components/SearchResult';
-
-type Result = { path: string; excerpt: string };
+import { SearchResult, type Result } from './components/SearchResult';
 
 const API_BASE = 'http://127.0.0.1:5000';
 
@@ -57,7 +55,7 @@ const App: React.FC = () => {
       const resp = await fetch(`${API_BASE}/api/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q, path: directoryPath }),
+        body: JSON.stringify({ query: q, path: directoryPath }),
       });
       if (!resp.ok) throw new Error('Search failed');
       const data = await resp.json();
@@ -69,9 +67,6 @@ const App: React.FC = () => {
       setStatus('Error');
     }
   };
-
-  const escapeHtml = (s: string) =>
-    String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   return (
     <div className="frame">

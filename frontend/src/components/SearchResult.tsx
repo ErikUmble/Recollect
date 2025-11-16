@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import '../App.css';
 
-type Result = {
-    image: number; // index in all_files
-    all_files: string[];
+export type Result = {
+  dir: string;
+  match_index: number;
+  all_files: string[]
 };
 
 type SearchResultProps = {
   result: Result;
 };
 
-const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
+export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(result.image);
+  const [currentIndex, setCurrentIndex] = useState(result.match_index);
+  console.log(result);
 
   const openModal = () => {
-    setCurrentIndex(result.image);
+    setCurrentIndex(result.match_index);
     setModalOpen(true);
   };
 
@@ -33,7 +35,7 @@ const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
     <>
       {/* Search Result Item */}
       <div className="result" onClick={openModal} style={{ cursor: 'pointer' }}>
-        { result.all_files[result.image].split('/').pop() }
+        { result.all_files[result.match_index].split('/').pop() }
       </div>
 
       {/* Modal for Image Viewer */}
