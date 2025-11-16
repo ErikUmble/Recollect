@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
-from search import search_documents, get_index
+from search import search_documents, get_index, get_cached_index_only
 from agent import build_agent
 from langchain_core.messages import HumanMessage
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Global variable to hold the agent's last response
 agent_response = None
@@ -57,7 +60,7 @@ def set_path():
     if not path or not os.path.isdir(path):
         return jsonify({'error': 'Invalid directory path'}), 400
 
-    documents = get_index(path, use_cache=True)
+    documents = get_cached_index_only(path)
     return jsonify({
         'status': 'Index created',
         'num_documents': len(documents),
@@ -73,7 +76,7 @@ def search():
     data = request.get_json()
     query = data.get('query')
     path = data.get('path')
-    documents = get_index(path, use_cache=True)
+    documents = get_cached_index_only(path)
 
     if not query or not documents:
         return jsonify({'results': []})
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     agent = build_agent()
 
     # Create index before starting server
-    get_index('tests/data/', use_cache=True)
+    get_cached_index_only('tests/data/')
 
     # Start Flask app
     app.run(debug=True, port=5000)

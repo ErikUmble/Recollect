@@ -1,10 +1,10 @@
 from langchain.tools import BaseTool
 from typing import List
-from search import get_index, search_documents
+from search import get_index, search_documents, get_cached_index_only
 from ocr import run_ocr
 
 def fetch_newspaper_text(agent_query):
-    documents = get_index('tests/data')
+    documents = get_cached_index_only('demo/data')
     results = search_documents(agent_query, documents, top_k=1)
     total_str = ""
     for result in results:

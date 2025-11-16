@@ -37,14 +37,14 @@ class Document:
         return self.__str__()
 
 def compute_text_embedding(text: str) -> np.ndarray:
-    embedding = text_model.encode(text, convert_to_tensor=True)
+    embedding = text_model.encode(text, convert_to_tensor=True).cpu().numpy()
     return embedding
 
 def compute_image_embedding(img: Optional[Image.Image] = None, query: Optional[str] = None) -> np.ndarray:
     if img is not None:
-        return image_model.encode(img, convert_to_tensor=True)
+        return image_model.encode(img, convert_to_tensor=True).cpu().numpy()
     if query is not None:
-        return image_model.encode(query, convert_to_tensor=True)
+        return image_model.encode(query, convert_to_tensor=True).cpu().numpy()
     raise ValueError("Either img or query must be provided")
 
 def compute_document_embeddings(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
@@ -52,7 +52,7 @@ def compute_document_embeddings(path: str) -> Tuple[List[np.ndarray], List[np.nd
     returns a list of embeddings for the sentences in the document
     """
     chunks = extract_chunks(path)
-    text_embeddings = [text_model.encode(chunk, convert_to_tensor=True) for chunk in chunks]
+    text_embeddings = [compute_text_embedding(chunk) for chunk in chunks]
     if is_image_path(path):
         images = extract_images_from_document(path)
         image_embeddings = [compute_image_embedding(img) for img in images]
@@ -203,6 +203,7 @@ def _create_index_recursive(dir_path: str, allow_types: Optional[Tuple[str]], us
 
     if subcache_threshold is not None and len(uncached) > subcache_threshold:
         cache_path = _save_index_to_cache(os.path.join(dir_path, ".recollect"), uncached, child_cache_paths=children_cache_paths)
+        print(f"Cached {len(uncached)} documents to {cache_path}")
         
         # reset children paths to just this, as further children are already referenced in this cache level
         children_cache_paths = [cache_path]
@@ -215,9 +216,25 @@ def _create_index_recursive(dir_path: str, allow_types: Optional[Tuple[str]], us
     return cached, uncached, children_cache_paths
 
 
+def get_cached_index_only(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt')) -> List[Document]:
+    """
+    Returns documents loaded from descendants of dir_path that are already cached; this does not index or cache any new documents.
+    """
+    # search for .recollect directories recursively
+    documents = []
+    if os.path.exists(os.path.join(dir_path, '.recollect')):
+        documents = _load_cached_index(os.path.join(dir_path, '.recollect'))
+        return documents
+    
+    for entry in os.listdir(dir_path):
+        full_path =  os.path.join(dir_path, entry)
+        if os.path.isdir(full_path) and not entry.startswith('.'):
+            documents += get_cached_index_only(full_path, allow_types=allow_types)
+            
+    return documents
 
 
-def get_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt'), use_cache: bool=True, subcache_threshold: Optional[int]=50) -> List[Document]:
+def get_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt'), use_cache: bool=True, subcache_threshold: Optional[int]=50, avoid_create: bool = False) -> List[Document]:
     """
     Create an index of documents from the specified directory.
     If use_cache is True, this will save the index to a .recollect subdirectory and load from it for faster index creation in future calls.
@@ -269,7 +286,11 @@ def run_tests():
     assert len(results) == 3
     assert results[0].path.endswith("rocket.png")
 
+def build_demo_index():
+    demo_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "demo", "data")
+    documents = get_index(demo_data_dir, allow_types=('pdf', 'png', 'jpg', 'txt'), use_cache=True, subcache_threshold=4)
+    print(f"Indexed {len(documents)} documents in demo data directory.")
+
 
 if __name__ == "__main__":
-    run_tests()
-
+    build_demo_index()
