@@ -5,6 +5,8 @@ from PIL import Image
 import pytesseract
 import re
 
+from utils import is_image_path
+
 def run_ocr(image_path: str) -> str:
     """
     Run OCR on a document image using Tesseract.
@@ -24,7 +26,7 @@ def extract_chunks(path: str) -> List[str]:
     if path.endswith('.txt'):
         with open(path) as f:
             text = f.read()
-    elif path.endswith('.png') or path.endswith('.jpg'):
+    elif is_image_path(path):
         text = run_ocr(path)
     else:
         raise NotImplementedError(f"OCR not implemented for file type: {path}")
