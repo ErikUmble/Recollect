@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
-from search import search_documents, get_index, get_cached_index_only
+from search import search_documents, get_cached_index_only
 from agent import build_agent
 from langchain_core.messages import HumanMessage
+import threading
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -50,6 +51,9 @@ def list_dirs():
 
     return jsonify({'dirs': dirs})
 
+def build_index(path):
+    global documents
+    documents = get_cached_index_only(path)
 
 @app.route('/api/set-path', methods=['POST'])
 def set_path():
@@ -60,7 +64,10 @@ def set_path():
     if not path or not os.path.isdir(path):
         return jsonify({'error': 'Invalid directory path'}), 400
 
-    documents = get_cached_index_only(path)
+    # Start the indexing in a separate thread
+    index_thread = threading.Thread(target=build_index, args=(path,))
+    index_thread.start()
+
     return jsonify({
         'status': 'Index created',
         'num_documents': len(documents),
