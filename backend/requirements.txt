@@ -4,5 +4,6 @@ sentence-transformers
 pytesseract
 flask-cors
 numpy<2
+opencv-python
 
 # apt-get install tesseract-ocr
