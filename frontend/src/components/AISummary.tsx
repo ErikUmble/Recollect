@@ -19,6 +19,8 @@ const AISummary: React.FC<AISummaryProps> = ({ summary }) => {
         border: '1px solid var(--accent)',
         borderRadius: 4,
         whiteSpace: 'pre-wrap',
+        overflow: 'auto',
+        height: '100%'
       }}
     >
       <div
