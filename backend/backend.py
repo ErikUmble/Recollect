@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import os
 from search import search_documents, get_cached_index_only
@@ -20,9 +20,14 @@ agent = None
 # ==============================
 # Flask app setup
 # ==============================
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
 CORS(app, origins=["http://localhost:5173"])
 documents = []       # Stored as relative paths
+
+# Serve index.html at root
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
 
 # ------------------------------
 # File endpoints
