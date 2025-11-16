@@ -10,6 +10,7 @@ export type Result = {
 type SearchResultProps = {
   result: Result;
 };
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:5000';
 
 export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -46,7 +47,7 @@ export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
             <img
               key={idx}
               className="thumb"
-              src={`http://127.0.0.1:5000/api/file?path=${encodeURIComponent(result.all_files[idx])}`}
+              src={`${API_BASE}/api/file?path=${encodeURIComponent(result.all_files[idx])}`}
               onClick={() => openModalAt(idx)}
               alt={result.all_files[idx]}
             />
@@ -70,7 +71,7 @@ export const SearchResult: React.FC<SearchResultProps> = ({ result }) => {
               </button>
 
               <img
-                src={`http://127.0.0.1:5000/api/file?path=${encodeURIComponent(currentFile)}`}
+                src={`${API_BASE}/api/file?path=${encodeURIComponent(currentFile)}`}
                 alt={currentFile}
                 style={{
                   maxWidth: '80%',
