@@ -10,6 +10,9 @@ import threading
 from dotenv import load_dotenv
 load_dotenv()
 
+DEMO_MODE = os.getenv('VITE_DEMO_MODE', 'true').lower() == 'true'
+DEMO_PATH = os.getenv('VITE_DEMO_PATH', 'tests/data/')
+
 # Global variable to hold the agent's last response
 agent_response = None
 agent = None
@@ -60,6 +63,10 @@ def build_index(path):
 
 @app.route('/api/set-path', methods=['POST'])
 def set_path():
+
+    if not DEMO_MODE:
+        return jsonify({'error': 'Not allowed in non-demo mode'}), 403
+
     global documents
     data = request.get_json()
     path = data.get('path')
@@ -153,6 +160,10 @@ if __name__ == '__main__':
 
     # Create index before starting server
     get_cached_index_only('tests/data/')
+
+    # if VITE_DEMO_MODE=false, build index from VITE_DEMO_PATH
+    if not DEMO_MODE:
+        build_index(DEMO_PATH)
 
     # Start Flask app
     app.run(debug=True, port=5000)

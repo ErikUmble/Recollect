@@ -4,16 +4,23 @@ import DirectoryBrowser from './components/DirectoryBrowser';
 import { SearchResult, type Result } from './components/SearchResult';
 import AISummary from './components/AISummary';
 
-const API_BASE = 'http://127.0.0.1:5000';
+// get API_BASE from environment variable or default
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:5000';
+console.log('Using API_BASE:', API_BASE);
+
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
+const PATH = import.meta.env.VITE_DEMO_PATH || '';
 
 const App: React.FC = () => {
-  const [directoryPath, setDirectoryPath] = useState('');
+  const [directoryPath, setDirectoryPath] = useState(IS_DEMO ? '' : PATH);
   const [browserOpen, setBrowserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [logs, setLogs] = useState<{ text: string; type: 'info' | 'success' | 'error' }[]>([]);
   const [aiSummary, setAISummary] = useState('');
   const [pendingStatus, setPendingStatus] = useState<string[]>([]);
+
+  console.log('Current directoryPath:', directoryPath);
 
   // log helper
   const log = (text: string, type: 'info' | 'success' | 'error' = 'info') => {
@@ -143,7 +150,16 @@ const App: React.FC = () => {
 
       <aside className="sidebar">
         <div>
-          <button className="btn primary" onClick={() => setBrowserOpen(true)}>
+          <button
+            className="btn primary"
+            onClick={() => setBrowserOpen(true)}
+            disabled={!IS_DEMO}
+            style={{
+              cursor: IS_DEMO ? 'pointer' : 'not-allowed',
+              boxShadow: !IS_DEMO ? 'none' : undefined,
+            }}
+            title={IS_DEMO ? '' : 'Directory selection disabled while not in demo mode'}
+          >
             {directoryPath ? 'Change Directory' : 'Choose Directory'}
           </button>
           {directoryPath && (
