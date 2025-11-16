@@ -9,6 +9,7 @@ from ocr import extract_chunks
 
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
+model = model.to('cpu')
 
 class Document:
     def __init__(self, path: str, embeddings: Optional[List[np.ndarray]]=None):
@@ -17,13 +18,13 @@ class Document:
         if embeddings is not None:
             self.embeddings = embeddings
             return
-        
+
         # compute embedding
         self.embeddings = compute_document_embeddings(path)
 
     def __str__(self):
         return self.path
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -32,7 +33,7 @@ class Document:
             'path': self.path,
             'embeddings': np.array(self.embeddings)
         }
-    
+
     @staticmethod
     def deserialize(data: dict) -> 'Document':
         path = data['path']
@@ -85,11 +86,11 @@ def extract_file_paths(dir_path: str, types: Tuple[str]) -> List[str]:
         elif os.path.isdir(os.path.join(dir_path, filename)):
             sub_dir_paths = extract_file_paths(os.path.join(dir_path, filename), types)
             file_paths.extend(sub_dir_paths)
-    
+
     return file_paths
 
 def save_index(index_path: str, documents: List[Document]):
-    
+
     os.makedirs(index_path, exist_ok=True)
 
     index_data = {"documents": []}
@@ -109,7 +110,7 @@ def load_index(index_path: str) -> List[Document]:
     import json
     with open(Path(index_path) / "index.json", "r") as f:
         index_data = json.load(f)
-    
+
     documents = []
     for doc_data in index_data["documents"]:
         emb_file = Path(index_path) / doc_data["embeddings_file"]
@@ -117,7 +118,7 @@ def load_index(index_path: str) -> List[Document]:
         embeddings = [loaded[key] for key in loaded]
         document = Document(doc_data["path"], embeddings=embeddings)
         documents.append(document)
-    
+
     return documents
 
 def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png', 'jpg', 'txt'), use_cache=True) -> List[Document]:
@@ -141,7 +142,7 @@ def create_index(dir_path: str, allow_types: Optional[Tuple[str]] = ('pdf', 'png
     # save cached index
     if use_cache:
         save_index(os.path.join(dir_path, '.recollect'), documents)
-    
+
     return documents
 
 def run_tests():
@@ -166,4 +167,4 @@ def run_tests():
 
 if __name__ == "__main__":
     run_tests()
-    
+

@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import glob
 from ocr import run_ocr  # Your OCR function
+from search import search_documents, create_index
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"])  # Allow React frontend
@@ -62,38 +63,29 @@ def set_path():
 @app.route('/api/search', methods=['POST'])
 def search():
     """
-    Returns JSON with each result containing:
-    - 'image': index of the main image in the all_files list
-    - 'all_files': list of full file paths in the directory
+    Returns JSON list of:
+    dir name, list of indicies of matching files, and
+    list of all filenames in that directory.
     """
-    # Example main image
-    main_image = 'tests/data/The_Rensselaer_Polytechnic:_April_1,_1918/page1.jpg'
-    directory = os.path.dirname(main_image)
+    data = request.get_json()
+    query = data.get('query')
 
-    try:
-        # Full paths for all files in directory
-        all_files = [
-            os.path.abspath(os.path.join(directory, f))
-            for f in os.listdir(directory)
-            if os.path.isfile(os.path.join(directory, f))
-        ]
-        all_files.sort()
+    if not query:
+        return jsonify({'results': []})
 
-        # Determine index of main image
-        try:
-            main_index = all_files.index(os.path.abspath(main_image))
-        except ValueError:
-            main_index = 0
-    except Exception:
-        all_files = []
-        main_index = 0
-
-    result = {
-        'image': main_index,
-        'all_files': all_files
-    }
-
-    return jsonify({'results': [result]})
+    matching_paths = search_documents(query)
+    results = []
+    for path in matching_paths:
+        dir_name = os.path.dirname(path)
+        all_files = [os.path.basename(f) for f in glob.glob(os.path.join(dir_name, '*'))]
+        match_index = all_files.index(os.path.basename(path)) if os.path.basename(path) in all_files else -1
+        results.append({
+            'dir': dir_name,
+            'match_index': match_index,
+            'all_files': all_files
+        })
+    return jsonify({'results': results})
 
 if __name__ == '__main__':
+    create_index('tests/data/', use_cache=True)
     app.run(debug=True, port=5000)
