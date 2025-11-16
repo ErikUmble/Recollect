@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import './App.css';
 import DirectoryBrowser from './components/DirectoryBrowser';
-import SearchResult from './components/SearchResult';
-
-type Result = { path: string; excerpt: string };
+import { SearchResult, type Result } from './components/SearchResult';
+import AISummary from './components/AISummary';
 
 const API_BASE = 'http://127.0.0.1:5000';
 
@@ -13,7 +12,8 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [logs, setLogs] = useState<{ text: string; type: 'info' | 'success' | 'error' }[]>([]);
-  const [status, setStatus] = useState('Idle');
+  const [aiSummary, setAISummary] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<string[]>([]);
 
   // log helper
   const log = (text: string, type: 'info' | 'success' | 'error' = 'info') => {
@@ -21,10 +21,42 @@ const App: React.FC = () => {
     setLogs((prev) => [{ text: timestamp, type }, ...prev]);
   };
 
+  const appendStatus = (status: string) => {
+    setPendingStatus((prev) => [...prev, status]);
+  }
+  const removeStatus = (status: string) => {
+    setPendingStatus((prev) => prev.filter((s) => s !== status));
+  }
+  const status = pendingStatus.length > 0 ? pendingStatus[pendingStatus.length - 1] : 'Idle';
+
+  const searchAndPrompt = async (query: string) => {
+      if (!query) return;
+
+      // Run both async functions in parallel
+      try {
+        appendStatus('Searching');
+        appendStatus('Generating AI Summary');
+        const [searchResults, promptAnswer] = await Promise.all([
+          search(query),         // your existing search function
+          prompt(query), // new async prompt
+        ]);
+
+        console.log('Prompt result:', promptAnswer);
+        setAISummary(promptAnswer);
+      } catch (err) {
+        console.error(err);
+        log(err.message, 'error');
+        appendStatus('Error');
+      } finally {
+        removeStatus('Searching');
+        removeStatus('Generating AI Summary');
+      }
+    }
+
   // set directory on backend
   const setDirectory = async (path: string) => {
     if (!path) return;
-    setStatus('Setting path...');
+    appendStatus('Setting Directory');
     try {
       const resp = await fetch(`${API_BASE}/api/set-path`, {
         method: 'POST',
@@ -34,11 +66,11 @@ const App: React.FC = () => {
       if (!resp.ok) throw new Error('Failed to set path');
       log(`Directory set: ${path}`, 'success');
       setDirectoryPath(path);
-      setStatus('Idle');
+      removeStatus('Setting Directory');
       setBrowserOpen(false);
     } catch (e: any) {
       log(e.message, 'error');
-      setStatus('Error');
+      appendStatus('Error');
     }
   };
 
@@ -52,26 +84,52 @@ const App: React.FC = () => {
       log('Please select a directory first', 'error');
       return;
     }
-    setStatus('Searching');
+    appendStatus('Searching');
     try {
       const resp = await fetch(`${API_BASE}/api/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q, path: directoryPath }),
+        body: JSON.stringify({ query: q, path: directoryPath }),
       });
       if (!resp.ok) throw new Error('Search failed');
       const data = await resp.json();
       setResults(data.results || []);
       log(`Search returned ${(data.results || []).length} results`, 'success');
-      setStatus('Idle');
+      removeStatus('Searching');
     } catch (e: any) {
       log(e.message, 'error');
-      setStatus('Error');
+      appendStatus('Error');
     }
   };
 
-  const escapeHtml = (s: string) =>
-    String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // prompt backend
+  const prompt = async (q: string) => {
+    if (!q) {
+      log('Please enter a prompt', 'error');
+      return;
+    }
+    if (!directoryPath) {
+      log('Please select a directory first', 'error');
+      return;
+    }
+    appendStatus('Generating AI Summary');
+    try {
+      const resp = await fetch(`${API_BASE}/api/agent/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: q, path: directoryPath }),
+      });
+      if (!resp.ok) throw new Error('Prompt failed');
+      const data = await resp.json();
+      log(`AI Summary generated`, 'success');
+      removeStatus('Generating AI Summary');
+      return data.response || '';
+    } catch (e: any) {
+      log(e.message, 'error');
+      appendStatus('Error');
+      return '';
+    }
+  }
 
   return (
     <div className="frame">
@@ -101,21 +159,36 @@ const App: React.FC = () => {
             </div>
           )}
         </div>
+        <AISummary summary={aiSummary} />
       </aside>
 
       <main className="main">
         <div className="searchbar">
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Search your recollections..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && search(searchQuery.trim())}
-          />
-          <button className="btn primary" onClick={() => search(searchQuery.trim())}>
-            Search
-          </button>
+        <input
+          className="search-input"
+          type="search"
+          placeholder="Search your recollections..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={
+            (e) => {
+              if (e.key === 'Enter') {
+                searchAndPrompt(searchQuery);
+              }
+            }
+          }
+        />
+
+        <button
+          className="btn primary"
+          onClick={
+            () => {
+              searchAndPrompt(searchQuery);
+            }
+          }
+        >
+          Search
+        </button>
         </div>
 
         <div className="results" role="region" aria-live="polite">

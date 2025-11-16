@@ -14,6 +14,8 @@ from utils import is_image_path
 text_model = SentenceTransformer('all-MiniLM-L6-v2')
 image_model = SentenceTransformer("clip-ViT-B-32")
 
+text_model = text_model.to('cpu')
+image_model = image_model.to('cpu')
 
 class Document:
     def __init__(self, path: str, text_embeddings: Optional[List[np.ndarray]]=None, image_embeddings: Optional[List[np.ndarray]]=None):
@@ -30,7 +32,7 @@ class Document:
 
     def __str__(self):
         return self.path
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -98,7 +100,7 @@ def extract_file_paths(dir_path: str, types: Tuple[str]) -> List[str]:
         elif os.path.isdir(os.path.join(dir_path, filename)):
             sub_dir_paths = extract_file_paths(os.path.join(dir_path, filename), types)
             file_paths.extend(sub_dir_paths)
-    
+
     return file_paths
 
 def _save_index_to_cache(cache_path: str, documents: List[Document], child_cache_paths: Optional[List[str]] = None):
@@ -270,4 +272,4 @@ def run_tests():
 
 if __name__ == "__main__":
     run_tests()
-    
+

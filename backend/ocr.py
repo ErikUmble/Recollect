@@ -30,17 +30,17 @@ def extract_chunks(path: str) -> List[str]:
         text = run_ocr(path)
     else:
         raise NotImplementedError(f"OCR not implemented for file type: {path}")
-    
+
     return ocr_to_chunks(text, max_words=250)
 
 def clean_ocr_text(text: str) -> str:
     """Normalize common OCR artifacts."""
-    
+
     # Normalize Unicode quotes and dashes
     text = text.replace("’", "'").replace("‘", "'")
     text = text.replace("“", '"').replace("”", '"')
     text = text.replace("–", "-").replace("—", "-")
-    
+
     # Fix common OCR split-hyphen line breaks ("ad-\nvanced" -> "advanced")
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
 
@@ -95,7 +95,7 @@ def run_tests():
 
     print(filepaths[:3])
     texts = [run_ocr(fp) for fp in filepaths[:3]]
-    
+
     with open('ocr_test_output.txt', 'a') as f:
         for fp, text in zip(filepaths[:3], texts):
             f.write(f"File: {fp}\n")

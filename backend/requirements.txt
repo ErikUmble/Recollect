@@ -3,5 +3,6 @@ python-dotenv
 sentence-transformers
 pytesseract
 flask-cors
+numpy<2
 
 # apt-get install tesseract-ocr
